@@ -99,7 +99,9 @@ function M.create_hover_split(vertical, remain_focused)
 
 	---@type vim.api.keyset.win_config
 	local win_opts = { focusable = true, vertical = vertical, style = "minimal" }
-	if not vertical then
+	if vertical then
+		win_opts.split = "right"
+	else
 		win_opts.split = "below"
 	end
 
