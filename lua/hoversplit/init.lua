@@ -100,9 +100,31 @@ function M.create_hover_split(vertical, remain_focused)
 	---@type vim.api.keyset.win_config
 	local win_opts = { focusable = true, vertical = vertical, style = "minimal" }
 	if vertical then
+		local win_width = vim.api.nvim_win_get_width(M.orig_winid)
+	  	local orig_textwidth = vim.api.nvim_get_option_value(
+	  		"textwidth",
+	  		{ buf = M.orig_bufnr }
+	  	)
+	  	local orig_textoff = vim.fn.getwininfo(M.orig_winid)[1].textoff
+		local padding = 1
+		local minimum = 12
+		local maximum = win_width / 2
+		local raw_width = win_width - (orig_textwidth + orig_textoff + padding)
+		local width = math.min(math.max(raw_width, minimum), maximum)
+
+		print("win_width = ", win_width)
+		print("textwidth = ", orig_textwidth)
+		print("textoff = ", orig_textoff)
+		print("raw_width = ", raw_width)
+		print(" ---> ", width)
+
 		win_opts.split = "right"
+		win_opts.width = width
 	else
-		win_opts.split = "below"
+		local win_height = vim.api.nvim_win_get_height(M.orig_winid)
+
+		win_opts.split = "above"
+		win_opts.height = win_height / 3
 	end
 
 	local conceallevel = config.conceallevel or 3
