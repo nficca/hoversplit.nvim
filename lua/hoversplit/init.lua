@@ -112,19 +112,13 @@ function M.create_hover_split(vertical, remain_focused)
 		local raw_width = win_width - (orig_textwidth + orig_textoff + padding)
 		local width = math.min(math.max(raw_width, minimum), maximum)
 
-		print("win_width = ", win_width)
-		print("textwidth = ", orig_textwidth)
-		print("textoff = ", orig_textoff)
-		print("raw_width = ", raw_width)
-		print(" ---> ", width)
-
 		win_opts.split = "right"
-		win_opts.width = width
+		win_opts.width = math.floor(width)
 	else
 		local win_height = vim.api.nvim_win_get_height(M.orig_winid)
 
 		win_opts.split = "above"
-		win_opts.height = win_height / 3
+		win_opts.height = math.floor(win_height / 3)
 	end
 
 	local conceallevel = config.conceallevel or 3
