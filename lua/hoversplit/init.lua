@@ -20,10 +20,20 @@ local function stabilized_resize(winid, height)
 		vim.api.nvim_win_set_height(winid, height)
 		return
 	end
-	local old_splitkeep = vim.o.splitkeep
-	vim.o.splitkeep = "screen"
+	-- Save view state (cursor + scroll position) in the original window
+	local view = nil
+	if M.orig_winid and vim.api.nvim_win_is_valid(M.orig_winid) then
+		view = vim.api.nvim_win_call(M.orig_winid, function()
+			return vim.fn.winsaveview()
+		end)
+	end
 	vim.api.nvim_win_set_height(winid, height)
-	vim.o.splitkeep = old_splitkeep
+	-- Restore view state
+	if view and M.orig_winid and vim.api.nvim_win_is_valid(M.orig_winid) then
+		vim.api.nvim_win_call(M.orig_winid, function()
+			vim.fn.winrestview(view)
+		end)
+	end
 end
 
 ---@param bufnr? integer
