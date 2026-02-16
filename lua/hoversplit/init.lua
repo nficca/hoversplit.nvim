@@ -6,6 +6,25 @@ M.hover_bufnr = nil ---@type integer|nil
 M.hover_winid = nil ---@type integer|nil
 M.orig_winid = nil ---@type integer|nil
 M.orig_bufnr = nil ---@type integer|nil
+M.orig_win_height = nil ---@type integer|nil
+M.is_vertical = nil ---@type boolean|nil
+
+---Resize a window while keeping the viewport stable (horizontal splits only)
+---@param winid integer
+---@param height integer
+local function stabilized_resize(winid, height)
+	if M.is_vertical then
+		return
+	end
+	if not config.options.stabilize_on_resize then
+		vim.api.nvim_win_set_height(winid, height)
+		return
+	end
+	local old_splitkeep = vim.o.splitkeep
+	vim.o.splitkeep = "screen"
+	vim.api.nvim_win_set_height(winid, height)
+	vim.o.splitkeep = old_splitkeep
+end
 
 ---@param bufnr? integer
 ---@return boolean
@@ -51,6 +70,13 @@ function M.update_hover_content()
 			local lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
 			vim.bo[M.hover_bufnr].modifiable = true
 			vim.api.nvim_buf_set_lines(M.hover_bufnr, 0, -1, false, lines)
+
+			local max_height = config.options.max_hover_height
+			if not max_height and M.orig_win_height then
+				max_height = math.floor(M.orig_win_height / 2)
+			end
+			local height = max_height and math.min(#lines, max_height) or #lines
+			stabilized_resize(M.hover_winid, height)
 			vim.bo[M.hover_bufnr].modifiable = false
 		end
 	)
@@ -65,9 +91,11 @@ function M.create_hover_split(vertical, remain_focused)
 	end
 
 	M.remain_focused = remain_focused
+	M.is_vertical = vertical
 	M.orig_bufnr = vim.api.nvim_get_current_buf()
 	M.orig_winid = vim.api.nvim_get_current_win()
 	M.orig_pos = vim.api.nvim_win_get_cursor(M.orig_winid)
+	M.orig_win_height = vim.api.nvim_win_get_height(M.orig_winid)
 	M.hover_bufnr = vim.api.nvim_create_buf(false, true)
 
 	local augroup = vim.api.nvim_create_augroup("HoverSplit", { clear = true })
@@ -171,6 +199,8 @@ function M.close_hover_split()
 		vim.api.nvim_buf_delete(M.hover_bufnr, { force = true })
 		M.hover_bufnr = nil
 		M.hover_winid = nil
+		M.orig_win_height = nil
+		M.is_vertical = nil
 	end
 end
 
