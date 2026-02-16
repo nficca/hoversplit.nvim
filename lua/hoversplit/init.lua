@@ -145,7 +145,7 @@ function M.create_hover_split(vertical, remain_focused)
 	else
 		local win_height = vim.api.nvim_win_get_height(M.orig_winid)
 
-		win_opts.split = "above"
+		win_opts.split = config.options.split_position
 		win_opts.height = math.floor(win_height / 3)
 	end
 

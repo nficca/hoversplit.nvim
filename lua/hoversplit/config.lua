@@ -11,6 +11,7 @@ M.options = {
 	},
 	max_hover_height = nil, -- nil = 50% of window, or set explicit line count
 	stabilize_on_resize = true, -- prevent viewport jolt when hover window resizes
+	split_position = "above", -- "above" or "below" for horizontal splits
 }
 
 return M
