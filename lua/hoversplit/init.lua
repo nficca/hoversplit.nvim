@@ -81,11 +81,9 @@ function M.update_hover_content()
 			vim.bo[M.hover_bufnr].modifiable = true
 			vim.api.nvim_buf_set_lines(M.hover_bufnr, 0, -1, false, lines)
 
-			local max_height = config.options.max_hover_height
-			if not max_height and M.orig_win_height then
-				max_height = math.floor(M.orig_win_height / 2)
-			end
-			local height = max_height and math.min(#lines, max_height) or #lines
+			local target = math.floor(M.orig_win_height * config.options.target_height_ratio)
+			local max_h = math.min(target, config.options.max_height)
+			local height = math.min(#lines, max_h)
 			stabilized_resize(M.hover_winid, height)
 			vim.bo[M.hover_bufnr].modifiable = false
 		end
@@ -139,24 +137,33 @@ function M.create_hover_split(vertical, remain_focused)
 	local win_opts = { focusable = true, vertical = vertical, style = "minimal" }
 	if vertical then
 		local win_width = vim.api.nvim_win_get_width(M.orig_winid)
-	  	local orig_textwidth = vim.api.nvim_get_option_value(
-	  		"textwidth",
-	  		{ buf = M.orig_bufnr }
-	  	)
-	  	local orig_textoff = vim.fn.getwininfo(M.orig_winid)[1].textoff
-		local padding = 1
-		local minimum = 12
-		local maximum = win_width / 2
-		local raw_width = win_width - (orig_textwidth + orig_textoff + padding)
-		local width = math.min(math.max(raw_width, minimum), maximum)
+		local width
+
+		if config.options.target_width_ratio == "auto" then
+			local orig_textwidth = vim.api.nvim_get_option_value(
+				"textwidth",
+				{ buf = M.orig_bufnr }
+			)
+			local orig_textoff = vim.fn.getwininfo(M.orig_winid)[1].textoff
+			local padding = 1
+			local minimum = 12
+			local maximum = win_width / 2
+			local raw_width = win_width - (orig_textwidth + orig_textoff + padding)
+			width = math.min(math.max(raw_width, minimum), maximum)
+		else
+			local target = math.floor(win_width * config.options.target_width_ratio)
+			width = math.min(target, config.options.max_width)
+		end
 
 		win_opts.split = "right"
 		win_opts.width = math.floor(width)
 	else
 		local win_height = vim.api.nvim_win_get_height(M.orig_winid)
+		local target = math.floor(win_height * config.options.target_height_ratio)
+		local height = math.min(target, config.options.max_height)
 
 		win_opts.split = config.options.split_position
-		win_opts.height = math.floor(win_height / 3)
+		win_opts.height = height
 	end
 
 	local conceallevel = config.conceallevel or 3
